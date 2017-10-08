@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import cv2
 
 # Identify pixels above the threshold
@@ -160,7 +161,16 @@ def perception_step(Rover):
         # Rover.nav_dists = rover_centric_pixel_distances
         # Rover.nav_angles = rover_centric_angles
     dist, angles = to_polar_coords(go_x, go_y)
+
+    ############################################################################
+    # Save data for analysis and exploration
+    nav_df = pd.DataFrame({'distance': dist, 'angles': angles})
+    nav_df.to_csv('../.tmp/navigation_df.csv')
     rock_dists, rock_angles = to_polar_coords(rock_x, rock_y)
+    rocks_df = pd.DataFrame({'distance': rock_dists, 'angles': rock_angles})
+    rocks_df.to_csv('../.tmp/rocks_df.csv')
+    ############################################################################
+
     Rover.nav_dists = dist
     Rover.nav_angles = angles
     Rover.rock_dists = rock_dists
