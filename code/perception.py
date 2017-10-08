@@ -17,6 +17,20 @@ def color_thresh(img, rgb_thresh=(160, 160, 160)):
     # Return the binary image
     return color_select
 
+def find_rocks(img, rgb_thresh=(100, 100, 50)):
+    # Create an array of zeros same xy size as img, but single channel
+    color_select = np.zeros_like(img[:,:,0])
+    # Require that each pixel be above all three threshold values in RGB
+    # above_thresh will now contain a boolean array with "True"
+    # where threshold was met
+    above_thresh = (img[:,:,0] > rgb_thresh[0]) \
+                & (img[:,:,1] > rgb_thresh[1]) \
+                & (img[:,:,2] < rgb_thresh[2])
+    # Index the array of zeros with the boolean array and set to 1
+    color_select[above_thresh] = 1
+    # Return the binary image
+    return color_select
+
 # Define a function to convert from image coords to rover coords
 def rover_coords(binary_img):
     # Identify nonzero pixels
@@ -102,17 +116,19 @@ def perception_step(Rover):
                     {'src': np.float32([14, 142]),
                      'dst': np.float32([(img.shape[1]/2) - (dst_size/2),
                                         img.shape[0] - y_offset + dst_size ])}}
-
-
-
     # 2) Apply perspective transform
     keys = src2dest.keys()
     warped_img = perspect_transform(
                     Rover.img,
                     src = np.array([src2dest[k]['src'] for k in keys]),
                     dst = np.array([src2dest[k]['dst'] for k in keys]))
-                    
+
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
+    terrain_binary = color_thresh(warped_img)
+    obstacle_binary = terrain_binary == 0
+    #TODO: smoothing?
+    rocks_binary = find_rocks(warped_img)
+
     # 4) Update Rover.vision_image (this will be displayed on left side of screen)
         # Example: Rover.vision_image[:,:,0] = obstacle color-thresholded binary image
         #          Rover.vision_image[:,:,1] = rock_sample color-thresholded binary image
