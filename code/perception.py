@@ -37,8 +37,8 @@ def rover_coords(binary_img):
     ypos, xpos = binary_img.nonzero()
     # Calculate pixel positions with reference to the rover position being at the
     # center bottom of the image.
-    x_pixel = -(ypos - binary_img.shape[0]).astype(np.float)
-    y_pixel = -(xpos - binary_img.shape[1]/2 ).astype(np.float)
+    x_pixel = -(ypos - binary_img.shape[0]).astype(np.int)
+    y_pixel = -(xpos - binary_img.shape[1]/2 ).astype(np.int)
     return x_pixel, y_pixel
 
 
@@ -100,6 +100,7 @@ def perception_step(Rover):
     # 1) Define source and destination points for perspective transform
     dst_size = 10
     y_offset =  6 + dst_size
+    img = Rover.img
     src2dest = {'top_left':
                     {'src': np.float32([120,95]),
                      'dst': np.float32([(img.shape[1]/2) - (dst_size/2),
@@ -125,7 +126,7 @@ def perception_step(Rover):
 
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
     terrain_binary = color_thresh(warped_img)
-    obstacle_binary = terrain_binary == 0
+    obstacle_binary = (terrain_binary == 0).astype(int)
     #TODO: smoothing?
     rocks_binary = find_rocks(warped_img)
 
