@@ -9,6 +9,16 @@ def decision_step(Rover):
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
 
+    Rover.historical_pos.append(Rover.pos)
+    if len(Rover.historical_pos) < 5:
+        pass
+    else:
+        Rover.avg_velocity = np.sqrt(
+            (Rover.historical_pos[-1][0]-Rover.historical_pos[-10][0])**2 +
+            (Rover.historical_pos[-1][1]-Rover.historical_pos[-10][1])**2)  # meters over last 10 measurements
+        
+
+
     # Example:
     # Check if we have vision data to make decisions with
     if Rover.nav_angles is not None:
@@ -63,7 +73,7 @@ def decision_step(Rover):
     # Just to make the rover do something
     # even if no modifications have been made to the code
     else:
-        Rover.throttle = Rover.throttle_set
+        Rover.throttle = -Rover.throttle_set
         Rover.steer = 0
         Rover.brake = 0
 
