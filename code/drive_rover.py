@@ -19,7 +19,7 @@ import time
 
 # Import functions for perception and decision making
 from perception import perception_step
-from decision import decision_step
+from decision import decision_step, Explore, FindHeading, WallCrawler
 from supporting_functions import update_rover, create_output_images
 # Initialize socketio server and Flask application
 # (learn more at: https://python-socketio.readthedocs.io/en/latest/)
@@ -35,9 +35,17 @@ ground_truth = mpimg.imread('../calibration_images/map_bw.png')
 # map output looks green in the display image
 ground_truth_3d = np.dstack((ground_truth*0, ground_truth*255, ground_truth*0)).astype(np.float)
 
+
+
+
+
 # Define RoverState() class to retain rover state parameters
 class RoverState():
     def __init__(self):
+        self.explore_sm = Explore()
+        self.wc_sm = None
+        self.find_heading = None
+
         self.start_time = None # To record the start time of navigation
         self.total_time = None # To record total duration of naviagation
         self.img = None # Current camera image
@@ -56,8 +64,8 @@ class RoverState():
         self.rock_dists = None
         self.rock_angles = None
         self.ground_truth = ground_truth_3d # Ground truth worldmap
-        self.mode = 'stuck' # Current mode (can be forward or stop)
-        self.throttle_set = 0.2 # Throttle setting when accelerating
+        self.mode = 'explore' # Current mode (can be forward or stop)
+        self.throttle_set = 1.0 # Throttle setting when accelerating
         self.brake_set = 10 # Brake setting when braking
         # The stop_forward and go_forward fields below represent total count
         # of navigable terrain pixels.  This is a very crude form of knowing
@@ -103,7 +111,8 @@ def telemetry(sid, data):
         fps = frame_counter
         frame_counter = 0
         second_counter = time.time()
-    print("Current FPS: {}".format(fps))
+    print("Current Mode: {}".format(Rover.mode))
+    print('Current yaw: {}'.format(Rover.yaw))
 
     if data:
         global Rover

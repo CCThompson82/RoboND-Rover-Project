@@ -1,6 +1,29 @@
 import numpy as np
 
 
+
+class Explore(object):
+
+    def __init__(self):
+
+        self.counter = 0
+        self.init_yaw = None
+        self.max_dist_heading = None
+        self.max_dist = None
+
+class WallCrawler(object):
+
+    def __init__(self, set_heading ):
+
+        self.init_heading = set_heading
+
+
+def FindHeading(object):
+
+    def __init__(self, target_heading):
+
+        self.target_heading = target_heading
+
 # This is where you can build a decision tree for determining throttle, brake and steer
 # commands based on the output of the perception_step() function
 def decision_step(Rover):
@@ -9,54 +32,66 @@ def decision_step(Rover):
     # Here you're all set up with some basic functionality but you'll need to
     # improve on this decision tree to do a good job of navigating autonomously!
 
-    # TODO: Update attr necessary to determine mode
-    Rover.historical_vel.append(Rover.vel)
-    Rover.historical_pos.append(Rover.pos)
-
-    #######################################################
-    if len(Rover.historical_velocity) > 20:
-        if np.mean(Rover.historical_velocity[-20:]) < 0.05 :
-            if len(Rover.nav_angles) >= Rover.go_forward:
-                Rover.mode = 'explore'
-            else:
-                Rover.mode = 'stuck'
-    elif len(Rover.rock_angles) > 0 :
-        Rover.mode = 'pick_and_place'
-    elif len(Rover.nav_angles) == 0 :
-        Rover.mode = 'stuck'
-    elif len(Rover.nav_angles) > 0 :
-        Rover.mode = 'explore'
-    elif Rover.samples_collected == 6 :
-        Rover.mode = 'go_home'
-    else:
-        Rover.mode = 'stuck'
-
     # TODO: Refactor to update necessary attr based on the
     # mode selected.
+    if Rover.mode == 'explore':
 
-    if Rover.mode == 'stuck':
-        Rover.throttle = -Rover.throttle_set
-        Rover.steer = (np.random.random() * 30) - 15
-        Rover.brake = 0
-    elif Rover.mode == 'explore':
-        # choose a yaw
-        Rover.steer = np.clip(np.mean(Rover.nav_angles * 180/np.pi), -15, 15)
-        steer_deg = Rover.steer * np.pi / 180
-        # how far can rover see on that heading
-        horizon_dist = np.max(
-            Rover.dist[
-                (steer_deg - 2) < Rover.nav_angles <
-                (steer_deg + 2)])
-        target_vel = -0.2 + ( 1.2 / (1 + exp(-0.05*(
-                horizon_dist-100))))
+        if Rover.explore_sm.counter == 0:
+            # init the explore state machine
+            Rover.explore_sm.init_yaw = Rover.yaw
+            Rover.explore_sm.target_yaw = Rover.yaw + 10
+            Rover.explore_sm.max_dist_heading = Rover.yaw
+            Rover.explore_sm.max_dist = 0
+            Rover.explore_sm.counter += 1
 
-        vel_diff = Rover.vel - (target_vel*Rover.max_vel)
-        Rover.throttle = Rover.throttle_set * (vel_diff/Rover.max_vel)
-
-        if Rover.throttle < 0 :
-            Rover.brake = Rover.brake_set * np.abs(vel_diff/Rover.max_vel)
+        elif (np.round(Rover.yaw) == np.round(Rover.explore_sm.target_yaw) and
+                Rover.explore_sm.counter > 100):
+            print('Switching to `find_heading` mode')
+            Rover.mode = 'find_heading'
+            Rover.throttle = 0
+            Rover.steer = 0
+            Rover.brake = 10
+            print(Rover.explore_sm.max_dist_heading)
+            Rover.find_heading.target_heading = Rover.explore_sm.max_dist_heading
+            print(Rover.find_heading)
+            Rover.explore_sm = Explore()
         else:
-            Rover.brake = 0
+            print('`explore` mode activated')
+            # spin and explore
+            # what is the max distance rover can observe straight ahead
+            filtered_angles = [Rover.yaw - 1 < x < Rover.yaw + 1 for x in Rover.nav_angles]
+            if len(Rover.nav_dists[filtered_angles]) < 10 :
+                # nothing to remember here
+                pass
+            else :
+                if np.max(Rover.nav_dists) > Rover.explore_sm.max_dist :
+                    Rover.explore_sm.max_dist = np.max(Rover.nav_dists)
+                    Rover.explore_sm.max_dist_heading = Rover.yaw
+                    print(Rover.explore_sm)
+                else:
+                    pass
+            Rover.throttle = 0
+            Rover.steer = 5
+        Rover.explore_sm.counter += 1
+
+    elif Rover.mode == 'find_heading':
+        Rover.throttle = 0
+        Rover.brake = 0
+        if np.round(Rover.yaw) == np.round(Rover.find_heading.target_heading):
+            Rover.mode = 'wall_crawler'
+            Rover.find_heading = None
+            Rover.brake = 10
+            Rover.steer = 0
+        elif Rover.yaw - Rover.find_heading.target_yaw < 0 :
+            # turn left
+            Rover.steer = -5
+        else  :
+            Rover.steer = 5
+
+    elif Rover.mode == 'wall_crawler':
+        print('Waiting for wall_crawler instructions!')
+
+
 
     elif Rover.mode == 'pick_and_place':
         Rover.steer = np.clip(np.mean(Rover.rock_angles * 180/np.pi), -15, 15)
@@ -68,18 +103,18 @@ def decision_step(Rover):
         elif 2 < distance_to_rock < 10:
             Rover.throttle = 0.1
         elif 1 < distance_to_rock < 2 :
-            Rover.throttle = 0.01 :
+            Rover.throttle = 0.01
         elif distance_to_rock < 1 :
             Rover.throttle = 0
-            Rover.brake = Rover.brake_set 
-
-
-
-
-
-
-
-
+            Rover.brake = Rover.brake_set
+    #
+    #
+    #
+    #
+    #
+    #
+    #
+    #
 
 
     #
