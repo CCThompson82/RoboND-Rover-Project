@@ -163,6 +163,16 @@ def perception_step(Rover):
         # Rover.nav_angles = rover_centric_angles
     dist, angles = to_polar_coords(go_x, go_y)
     obs_dists, obs_angles = to_polar_coords(nogo_x, nogo_y)
+    rock_dists, rock_angles = to_polar_coords(rock_x, rock_y)
+
+    Rover.nav_dists = dist
+    Rover.nav_angles = angles
+    Rover.rock_dists = rock_dists
+    Rover.rock_angles = rock_angles
+    Rover.obs_dists = obs_dists
+    Rover.obs_angles = obs_angles
+
+
 
     ############################################################################
     # Save data for analysis and exploration
@@ -173,20 +183,11 @@ def perception_step(Rover):
 
     nav_df = pd.DataFrame({'distance': dist, 'angles': angles})
     nav_df.to_csv('../.tmp/navigation_df.csv')
-    rock_dists, rock_angles = to_polar_coords(rock_x, rock_y)
     rocks_df = pd.DataFrame({'distance': rock_dists, 'angles': rock_angles})
     rocks_df.to_csv('../.tmp/rocks_df.csv')
     obs_df = pd.DataFrame({'distance': obs_dists, 'angles': obs_angles})
     obs_df.to_csv('../.tmp/obs_df.csv')
     pd.DataFrame(Rover.worldmap[:,:,0]).to_csv('../.tmp/obs_map.csv')
+    pd.DataFrame({'xpix':nogo_x, 'ypix':nogo_y}).to_csv('../.tmp/obs_pix.csv')
     ############################################################################
-
-    Rover.nav_dists = dist
-    Rover.nav_angles = angles
-    Rover.rock_dists = rock_dists
-    Rover.rock_angles = rock_angles
-    Rover.obs_dists = obs_dists
-    Rover.obs_angles = obs_angles
-
-
     return Rover
