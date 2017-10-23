@@ -30,47 +30,59 @@ def decision_step(Rover):
             Rover.brake = 0
             # TODO: Add rover.steer logic
             obs_df = pd.DataFrame({'distance':Rover.obs_dists, 'angles':Rover.obs_angles})
+            right = -65
+            left = 10
+            max_threshold = 125
             yaws = []
             distances = []
-            headings = range(-45,50,5)
+            yaws_df = pd.DataFrame([], columns = ['normal', 'tangent','distance','yaw',], index=[])
+            headings = range(right,left, 5)
             for phi in headings:
                 phi = np.deg2rad(phi)
-                ar = np.min(obs_df[(obs_df.angles > phi-0.01) & (obs_df.angles < phi+0.01)].distance)
-                a = np.min(obs_df[(obs_df.angles > phi-0.01) & (obs_df.angles < phi+0.01)].angles)
-                br = np.max(obs_df[(obs_df.angles > phi-0.01) & (obs_df.angles < phi+0.01)].distance)
-                b = np.max(obs_df[(obs_df.angles > phi-0.01) & (obs_df.angles < phi+0.01)].angles)
 
-                max_threshold = 100
+                flt = np.random.random() / 1e4
+                phi_set =obs_df[(obs_df.angles > phi-0.01) & (obs_df.angles < phi+0.01)]
+                if len(phi_set) == 0 :
+                    continue
+                else:
+                    ar = np.min(phi_set.distance) - flt
+                    a = np.min(phi_set.angles) - flt
+                    br = np.max(phi_set.distance) + flt
+                    b = np.max(phi_set.angles) + flt
+
                 if (ar > max_threshold) & (br > max_threshold) :
                     normal = 0
+                    tangent = normal - (np.pi/2)
                 else :
                     ax, ay = np.sin(a)*ar, np.cos(a)*ar
                     bx, by = np.sin(b)*br, np.cos(b)*br
 
                     normal = ((bx - ax) / (ay - by))
-            #     print('tangent angle: {}'.format(theta))
-                yaw = normal #+ (np.pi/2)
-                # yaw = np.pi/2
+                    tangent = normal - (np.pi/2)
+                yaw = normal - phi - (np.pi/2)
                 yaws.append(yaw)
                 distances.append(np.mean([ar,br]))
+                yaws_df = yaws_df.append(pd.DataFrame({'normal':normal, 'tangent':tangent, 'yaw':yaw,
+                                 'distance':np.min([ar,br])}, index = [phi]))
+            m1 = np.mean(Rover.nav_angles)
+            m2 = np.average(yaws_df.yaw, weights = (max_threshold - yaws_df.distance)/max_threshold)
+            m3 = np.mean(yaws_df.yaw)
+            m4 = np.mean([m1,m2,m3])
 
-            m1 = np.mean(yaws)
-            m2 = np.average(yaws, weights=[1/d for d in distances])
-            m3 = np.average(yaws, weights = [(phi - np.abs(h)) for h in headings]/(phi))
-            m4 = np.mean([m3,m2])
             # Set steering to average angle clipped to the range +/- 15
+            print('AVERAGE NAV YAW: {}'.format(np.median(Rover.nav_angles)))
+            print('TARGET YAW: {}'.format(m4))
             Rover.steer = np.clip(m4 * 180/np.pi, -15, 15)
             print('ROVER STEERS: {}'.format(Rover.steer))
-            print('TARGET YAW: {}'.format(m3))
 
             # # If there's a lack of navigable terrain pixels then go to 'stop' mode
-            # elif len(Rover.nav_angles) < Rover.stop_forward:
-            #         # Set mode to "stop" and hit the brakes!
-            #         Rover.throttle = 0
-            #         # Set brake to stored brake value
-            #         Rover.brake = Rover.brake_set
-            #         Rover.steer = 0
-            #         Rover.mode = 'stop'
+        elif len(Rover.nav_angles) < Rover.stop_forward:
+                # Set mode to "stop" and hit the brakes!
+                Rover.throttle = 0
+                # Set brake to stored brake value
+                Rover.brake = Rover.brake_set
+                Rover.steer = 0
+                Rover.mode = 'stop'
 
         # If we're already in "stop" mode then make different decisions
         elif Rover.mode == 'stop':

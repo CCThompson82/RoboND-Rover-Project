@@ -176,18 +176,18 @@ def perception_step(Rover):
 
     ############################################################################
     # Save data for analysis and exploration
-    try :
-        _ = os.listdir('../.tmp')
-    except :
-        os.makdirs('../.tmp')
-
-    nav_df = pd.DataFrame({'distance': dist, 'angles': angles})
-    nav_df.to_csv('../.tmp/navigation_df.csv')
-    rocks_df = pd.DataFrame({'distance': rock_dists, 'angles': rock_angles})
-    rocks_df.to_csv('../.tmp/rocks_df.csv')
-    obs_df = pd.DataFrame({'distance': obs_dists, 'angles': obs_angles})
-    obs_df.to_csv('../.tmp/obs_df.csv')
-    pd.DataFrame(Rover.worldmap[:,:,0]).to_csv('../.tmp/obs_map.csv')
-    pd.DataFrame({'xpix':nogo_x, 'ypix':nogo_y}).to_csv('../.tmp/obs_pix.csv')
+    # try :
+    #     _ = os.listdir('../.tmp')
+    # except :
+    #     os.makdirs('../.tmp')
+    #
+    # nav_df = pd.DataFrame({'distance': dist, 'angles': angles})
+    # nav_df.to_csv('../.tmp/navigation_df.csv')
+    # rocks_df = pd.DataFrame({'distance': rock_dists, 'angles': rock_angles})
+    # rocks_df.to_csv('../.tmp/rocks_df.csv')
+    # obs_df = pd.DataFrame({'distance': obs_dists, 'angles': obs_angles})
+    # obs_df.to_csv('../.tmp/obs_df.csv')
+    # pd.DataFrame(Rover.worldmap[:,:,0]).to_csv('../.tmp/obs_map.csv')
+    # pd.DataFrame({'xpix':nogo_x, 'ypix':nogo_y}).to_csv('../.tmp/obs_pix.csv')
     ############################################################################
     return Rover
