@@ -31,8 +31,8 @@ def decision_step(Rover):
             # TODO: Add rover.steer logic
             obs_df = pd.DataFrame({'distance':Rover.obs_dists, 'angles':Rover.obs_angles})
             right = -50
-            left = 5
-            max_threshold = 125
+            left = 20
+            max_threshold = 100
             yaws = []
             distances = []
             yaws_df = pd.DataFrame([], columns = ['normal', 'tangent','distance','yaw',], index=[])
@@ -51,13 +51,13 @@ def decision_step(Rover):
                     b = np.max(phi_set.angles) + flt
 
                 if (ar > max_threshold) & (br > max_threshold) :
-                    normal = 0
+                    normal = 0 + np.pi/2
                     tangent = normal - (np.pi/2)
                 else :
                     ax, ay = np.sin(a)*ar, np.cos(a)*ar
                     bx, by = np.sin(b)*br, np.cos(b)*br
 
-                    normal = ((bx - ax) / (ay - by))
+                    normal = ((bx - ax) / (ay - by)) + np.pi/2
                     tangent = normal - (np.pi/2)
                 yaw = normal - (np.pi/2)
                 yaws.append(yaw)
