@@ -67,7 +67,7 @@ def decision_step(Rover):
             m1 = np.mean(Rover.nav_angles)
             m2 = np.average(yaws_df.yaw, weights = (max_threshold - yaws_df.distance)/max_threshold)
             m3 = np.mean(yaws_df.yaw)
-            m4 = np.mean([m1,m2,m3])
+            m4 = np.mean([m1])
 
             # Set steering to average angle clipped to the range +/- 15
             print('AVERAGE NAV YAW: {}'.format(np.median(Rover.nav_angles)))

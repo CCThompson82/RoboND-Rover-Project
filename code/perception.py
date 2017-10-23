@@ -125,10 +125,12 @@ def perception_step(Rover):
                     Rover.img,
                     src = np.array([src2dest[k]['src'] for k in keys]),
                     dst = np.array([src2dest[k]['dst'] for k in keys]))
-
+    mask = perspect_transform(np.ones_like(Rover.img[:,:,0]),
+                    src = np.array([src2dest[k]['src'] for k in keys]),
+                    dst = np.array([src2dest[k]['dst'] for k in keys]))
     # 3) Apply color threshold to identify navigable terrain/obstacles/rock samples
     terrain_binary = color_thresh(warped_img)
-    obstacle_binary = (terrain_binary == 0)
+    obstacle_binary = (terrain_binary == 0)*mask
     rocks_binary = find_rocks(warped_img)
 
     # 4) Update Rover.vision_image (this will be displayed on left side of screen)
@@ -156,6 +158,11 @@ def perception_step(Rover):
     Rover.worldmap[nogo_y_world, nogo_x_world, 0] += 1
     Rover.worldmap[go_y_world, go_x_world, 2] += 1
     Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
+
+    Rover.worldmap[nogo_y_world, nogo_x_world, 2] -= 1
+    Rover.worldmap[go_y_world, go_x_world, 0] -= 1
+    Rover.worldmap = np.clip(Rover.worldmap, 0, 255)
+
 
     # 8) Convert rover-centric pixel positions to polar coordinates
     # Update Rover pixel distances and angles
