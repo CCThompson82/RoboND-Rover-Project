@@ -30,8 +30,8 @@ def decision_step(Rover):
             Rover.brake = 0
             # TODO: Add rover.steer logic
             obs_df = pd.DataFrame({'distance':Rover.obs_dists, 'angles':Rover.obs_angles})
-            right = -65
-            left = 10
+            right = -50
+            left = 5
             max_threshold = 125
             yaws = []
             distances = []
@@ -41,7 +41,7 @@ def decision_step(Rover):
                 phi = np.deg2rad(phi)
 
                 flt = np.random.random() / 1e4
-                phi_set =obs_df[(obs_df.angles > phi-0.01) & (obs_df.angles < phi+0.01)]
+                phi_set =obs_df[(obs_df.angles > phi-0.05) & (obs_df.angles < phi+0.05)]
                 if len(phi_set) == 0 :
                     continue
                 else:
@@ -59,15 +59,16 @@ def decision_step(Rover):
 
                     normal = ((bx - ax) / (ay - by))
                     tangent = normal - (np.pi/2)
-                yaw = normal - phi - (np.pi/2)
+                yaw = normal - (np.pi/2)
                 yaws.append(yaw)
                 distances.append(np.mean([ar,br]))
                 yaws_df = yaws_df.append(pd.DataFrame({'normal':normal, 'tangent':tangent, 'yaw':yaw,
                                  'distance':np.min([ar,br])}, index = [phi]))
+            print(yaws_df)
             m1 = np.mean(Rover.nav_angles)
             m2 = np.average(yaws_df.yaw, weights = (max_threshold - yaws_df.distance)/max_threshold)
-            m3 = np.mean(yaws_df.yaw)
-            m4 = np.mean([m1])
+
+            m4 = np.mean([m1,m2])
 
             # Set steering to average angle clipped to the range +/- 15
             print('AVERAGE NAV YAW: {}'.format(np.median(Rover.nav_angles)))
