@@ -19,7 +19,7 @@ import time
 
 # Import functions for perception and decision making
 from perception import perception_step
-from decision import decision_step, Explore, FindHeading, WallCrawler
+from decision import decision_step
 from supporting_functions import update_rover, create_output_images
 # Initialize socketio server and Flask application
 # (learn more at: https://python-socketio.readthedocs.io/en/latest/)
@@ -35,27 +35,19 @@ ground_truth = mpimg.imread('../calibration_images/map_bw.png')
 # map output looks green in the display image
 ground_truth_3d = np.dstack((ground_truth*0, ground_truth*255, ground_truth*0)).astype(np.float)
 
-
-
-
-
 # Define RoverState() class to retain rover state parameters
 class RoverState():
     def __init__(self):
-        self.explore_sm = Explore()
-        self.wc_sm = None
-        self.find_heading = None
-
         self.start_time = None # To record the start time of navigation
         self.total_time = None # To record total duration of naviagation
         self.img = None # Current camera image
         self.pos = None # Current position (x, y)
-        self.historical_pos = []
+        self.last_position = None
+        self.stopped_timestamp = None
         self.yaw = None # Current yaw angle
         self.pitch = None # Current pitch angle
         self.roll = None # Current roll angle
         self.vel = None # Current velocity
-        self.historical_vel = []
         self.steer = 0 # Current steering angle
         self.throttle = 0 # Current throttle value
         self.brake = 0 # Current brake value
@@ -111,8 +103,7 @@ def telemetry(sid, data):
         fps = frame_counter
         frame_counter = 0
         second_counter = time.time()
-    print("Current Mode: {}".format(Rover.mode))
-    print('Current yaw: {}'.format(Rover.yaw))
+    print("Current FPS: {}".format(fps))
 
     if data:
         global Rover
@@ -222,4 +213,4 @@ if __name__ == '__main__':
     app = socketio.Middleware(sio, app)
 
     # deploy as an eventlet WSGI server
-    eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
+eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
