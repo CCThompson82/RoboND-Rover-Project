@@ -22,7 +22,6 @@ def update_rover(Rover, data):
             samples_ypos = np.int_([convert_to_float(pos.strip()) for pos in data["samples_y"].split(';')])
             Rover.samples_pos = (samples_xpos, samples_ypos)
             Rover.samples_to_find = np.int(data["sample_count"])
-            Rover.stopped_timestamp = Rover.start_time
       # Or just update elapsed time
       else:
             tot_time = time.time() - Rover.start_time
@@ -33,15 +32,19 @@ def update_rover(Rover, data):
       Rover.vel = convert_to_float(data["speed"])
       # The current position of the rover
       Rover.pos = [convert_to_float(pos.strip()) for pos in data["position"].split(';')]
-      # Last rover position check:
-      if Rover.vel == 0 :
-          if Rover.last_position is None:
-              Rover.last_position = Rover.pos
 
-          if np.all(np.equal(np.round(Rover.pos),np.round(Rover.last_position))) :
-              pass
-          else :
-              Rover.stopped_timestamp = Rover.total_time
+      # Check if the rover has moved :
+      if Rover.last_position is None:
+          Rover.last_position = Rover.pos
+      if Rover.stopped_timestamp is None:
+          Rover.stopped_timestamp = Rover.total_time
+      if np.all(np.equal([np.round(xy) for xy in Rover.pos],
+            [np.round(xy) for xy in Rover.last_position])):
+          # Rover did not move since last update
+          stuck_for = Rover.total_time - Rover.stopped_timestamp
+      else :
+          # Rover has moved, update 'stopped_timestamp'
+          Rover.stopped_timestamp = Rover.total_time
       Rover.last_position = Rover.pos
 
       # The current yaw angle of the rover
@@ -119,7 +122,7 @@ def create_output_images(Rover):
                             samples_located += 1
                             map_add[test_rock_y-rock_size:test_rock_y+rock_size,
                             test_rock_x-rock_size:test_rock_x+rock_size, :] = 255
-      except: 
+      except:
           print('rock_world_pos not initialized yet')
       # Calculate some statistics on the map results
       # First get the total number of pixels in the navigable terrain map

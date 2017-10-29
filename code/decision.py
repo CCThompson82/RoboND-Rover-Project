@@ -79,7 +79,7 @@ def decision_step(Rover):
         # m4 = m2
         if Rover.stopped_timestamp is None :
             Rover.stopped_timestamp = Rover.total_time
-        if (Rover.total_time - Rover.stopped_timestamp) > 10:
+        elif (Rover.total_time - Rover.stopped_timestamp) > 10:
             Rover.mode = 'stuck'
 
 
