@@ -159,7 +159,7 @@ def perception_step(Rover):
     Rover.worldmap[go_y_world, go_x_world, 2] += 1
     Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
 
-    Rover.worldmap[nogo_y_world, nogo_x_world, 2] -= 1
+    # Rover.worldmap[nogo_y_world, nogo_x_world, 2] -= 1
     Rover.worldmap[go_y_world, go_x_world, 0] -= 1
     Rover.worldmap = np.clip(Rover.worldmap, 0, 255)
 

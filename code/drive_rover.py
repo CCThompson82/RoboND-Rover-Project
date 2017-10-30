@@ -44,6 +44,7 @@ class RoverState():
         self.pos = None # Current position (x, y)
         self.last_position = None
         self.stopped_timestamp = None
+        self.tmp_ts = None 
         self.yaw = None # Current yaw angle
         self.pitch = None # Current pitch angle
         self.roll = None # Current roll angle
