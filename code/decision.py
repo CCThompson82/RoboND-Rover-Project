@@ -15,20 +15,44 @@ def decision_step(Rover):
         print('MODE: {}'.format(Rover.mode))
 
         obs_df = pd.DataFrame({'distance':Rover.obs_dists, 'angles':Rover.obs_angles})
-        COMPASS_YAW = np.deg2rad(-30)
-        STIFFARM = 15
-        phi_set = obs_df[(obs_df.angles > COMPASS_YAW-0.05) & (obs_df.angles < COMPASS_YAW+0.05)]
-        if len(phi_set) == 0 :
-            compass_dist = 0
-        else :
+        nav_df = pd.DataFrame({'distance':Rover.nav_dists, 'angles':Rover.nav_angles})
+        # COMPASS_YAW = np.deg2rad(-30)
+        STIFFARM = 12
+        # phi_set = obs_df[(obs_df.angles > COMPASS_YAW-0.05) & (obs_df.angles < COMPASS_YAW+0.05)]
+        # if len(phi_set) == 0 :
+        #     compass_dist = 0
+        # else :
+        #     compass_dist = np.min(phi_set.distance)
+        # m4 = np.deg2rad(STIFFARM - compass_dist)
+        # print('Distance to wall: {}'.format(compass_dist))
+        #
+        # phi_set = obs_df[(obs_df.angles > -0.05) & (obs_df.angles < 0.05)]
+        # distance_ahead = np.min(phi_set.distance)
+        # print('DISTANCE AHEAD: {}'.format(distance_ahead))
 
-            compass_dist = np.min(phi_set.distance)
-        m4 = np.deg2rad(STIFFARM - compass_dist)
-        print('Distance to wall: {}'.format(compass_dist))
+        wall_diffs = []
+        for rad in range(-35,-20,5):
+            phi = np.deg2rad(rad)
+            phi_set = obs_df[(obs_df.angles > phi-0.05) & (obs_df.angles < phi+0.05)]
+            if len(phi_set) == 0 :
+                wall_dist = 0
+            else :
+                wall_dist = np.min(phi_set.distance)
+            wall_diffs.append(np.abs(STIFFARM/np.sin(phi))-wall_dist)
 
-        phi_set = obs_df[(obs_df.angles > -0.05) & (obs_df.angles < 0.05)]
-        distance_ahead = np.min(phi_set.distance)
-        print('DISTANCE AHEAD: {}'.format(distance_ahead))
+        print(wall_diffs)
+        m4 = np.deg2rad(np.mean(wall_diffs))
+        print(m4)
+        # #TODO: Switch to nav terrain not obstacles
+        nav_set = nav_df[(nav_df.angles > -0.15) & (nav_df.angles < 0.15)]
+        # if len(phi_set) == 0:
+        #     distance_ahead = 0
+        # elif len(phi_set) < 10:
+        #     distance_ahead = 0
+        # else :
+        #     distance_ahead = np.percentile(phi_set.distance,10)
+        # print('DISTANCE AHEAD: {}'.format(distance_ahead))
+
 
         # Check the extent of navigable terrain
 
@@ -47,7 +71,7 @@ def decision_step(Rover):
             print('ROVER STEERS: {}'.format(Rover.steer))
 
 
-            if distance_ahead < Rover.stop_forward and compass_dist < Rover.stop_forward:
+            if len(nav_set) < Rover.stop_forward :#and compass_dist < Rover.stop_forward:
                 Rover.mode = 'stop'
 
             if Rover.stopped_timestamp is None :
@@ -71,14 +95,14 @@ def decision_step(Rover):
             # If we're not moving (vel < 0.2) then do something else
             elif Rover.vel <= 0.2:
                 # Now we're stopped and we have vision data to see if there's a path forward
-                if distance_ahead < Rover.go_forward:
+                if len(nav_set)< Rover.go_forward:
                     Rover.throttle = 0
                     # Release the brake to allow turning
                     Rover.brake = 0
                     # Turn range is +/- 15 degrees, when stopped the next line will induce 4-wheel turning
                     Rover.steer = 15 # Could be more clever here about which way to turn
                 # If we're stopped but see sufficient navigable terrain in front then go!
-                if distance_ahead >= Rover.go_forward:
+                if len(nav_set) >= Rover.go_forward:
                     # Set throttle back to stored value
                     Rover.throttle = Rover.throttle_set
                     # Release the brake
