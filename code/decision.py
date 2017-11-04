@@ -40,11 +40,12 @@ def decision_step(Rover):
                 wall_dist = np.min(phi_set.distance)
             wall_diffs.append(np.abs(STIFFARM/np.sin(phi))-wall_dist)
 
-        print(wall_diffs)
         m4 = np.deg2rad(np.mean(wall_diffs))
         print(m4)
         # #TODO: Switch to nav terrain not obstacles
-        nav_set = nav_df[(nav_df.angles > -0.15) & (nav_df.angles < 0.15)]
+        nav_set = nav_df[(nav_df.angles > -0.1) & (nav_df.angles < 0.1)]
+        obs_set = obs_df[(obs_df.angles > -0.1) & (obs_df.angles < 0.1)]
+        # print(min(nav_set.distance), max(nav_set.distance), min(obs_set.distance), max(obs_set.distance))
         # if len(phi_set) == 0:
         #     distance_ahead = 0
         # elif len(phi_set) < 10:
