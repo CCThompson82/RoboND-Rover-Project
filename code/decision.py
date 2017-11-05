@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+import time
 # This is where you can build a decision tree for determining throttle, brake and steer
 # commands based on the output of the perception_step() function
 def decision_step(Rover):
@@ -16,6 +16,7 @@ def decision_step(Rover):
 
         obs_df = pd.DataFrame({'distance':Rover.obs_dists, 'angles':Rover.obs_angles})
         nav_df = pd.DataFrame({'distance':Rover.nav_dists, 'angles':Rover.nav_angles})
+        rocks_df = pd.DataFrame({'distance':Rover.rock_dists, 'angles':Rover.rock_angles})
         # COMPASS_YAW = np.deg2rad(-30)
         STIFFARM = 12
         # phi_set = obs_df[(obs_df.angles > COMPASS_YAW-0.05) & (obs_df.angles < COMPASS_YAW+0.05)]
@@ -72,9 +73,12 @@ def decision_step(Rover):
             print('ROVER STEERS: {}'.format(Rover.steer))
 
 
+
+
             if len(nav_set) < Rover.stop_forward :#and compass_dist < Rover.stop_forward:
                 Rover.mode = 'stop'
-
+            if len(rocks_df) > 5 :
+                Rover.mode = 'collection'
             if Rover.stopped_timestamp is None :
                 Rover.stopped_timestamp = Rover.total_time
             elif (Rover.total_time - Rover.stopped_timestamp) > 10:
@@ -83,6 +87,7 @@ def decision_step(Rover):
 
             if (Rover.roll < 355 and Rover.roll >180) or (Rover.roll > 5 and Rover.roll < 180):
                 Rover.mode = 'sandtrap'
+
 
 
 
@@ -111,6 +116,53 @@ def decision_step(Rover):
                     # Set steer to mean angle
                     Rover.steer = np.clip(m4, -15, 15)
                     Rover.mode = 'forward'
+        elif Rover.mode == 'collection':
+
+            if Rover.vel > 0.4:
+                Rover.throttle = 0
+                Rover.brake = 0.05
+                Rover.steer = 0
+                Rover.tmp_yaw = Rover.yaw
+            else :
+                # Rover is close to or stopped
+                if (Rover.total_time - Rover.stopped_timestamp) > 10:
+                    if np.equal(np.round(Rover.yaw), np.round(Rover.tmp_yaw)):
+                        Rover.mode = 'forward'
+                if len(rocks_df) == 0 :
+                    # rotate until rock is visible
+                    Rover.throttle = 0
+                    Rover.brake = 0
+                    Rover.steer = 7
+                else  :
+                    # rock is visible
+                    if np.abs(np.mean(rocks_df.angles)) < 0.1:
+                        # rock is centered
+                        if Rover.near_sample == 0:
+                            # not close to rock yet
+                            if Rover.vel < 0.35:
+                                # inch forward...
+                                if Rover.vel == 0:
+                                    Rover.steer = -15
+                                else :
+                                    Rover.steer = 0
+                                Rover.throttle = 0.2
+                                Rover.brake = 0
+                            else :
+                                # but don't exceed 0.4 m/s
+                                Rover.steer = 0
+                                Rover.throttle = 0
+                                Rover.brake = 0.01
+                        else :
+                            # rock is close enough to pick up
+                            Rover.steer = 0
+                            Rover.throttle = 0.0
+                            Rover.brake = Rover.brake_set
+                    else :
+                        # rotate until the rock is centered
+                        Rover.throttle = 0
+                        Rover.brake = 0
+                        Rover.steer = 7
+
         elif Rover.mode == 'stuck':
             print('STUCK FOR {} seconds'.format(Rover.total_time - Rover.tmp_ts))
             if (Rover.total_time - Rover.tmp_ts) < 1.5:
@@ -123,7 +175,7 @@ def decision_step(Rover):
                 Rover.brake = 0
                 Rover.throttle = 0
                 Rover.mode = 'stuck'
-            elif (Rover.total_time - Rover.tmp_ts) < 4.5:
+            elif (Rover.total_time - Rover.tmp_ts) < 5.0:
                 Rover.steer = 15
                 Rover.brake = 0
                 Rover.throttle = 0.5
@@ -143,5 +195,6 @@ def decision_step(Rover):
     # If in a state where want to pickup a rock send pickup command
     if Rover.near_sample and Rover.vel == 0 and not Rover.picking_up:
         Rover.send_pickup = True
+        Rover.mode = 'forward'
 
     return Rover

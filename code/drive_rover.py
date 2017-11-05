@@ -45,6 +45,7 @@ class RoverState():
         self.last_position = None
         self.stopped_timestamp = None
         self.tmp_ts = None
+        self.tmp_yaw = None
         self.yaw = None # Current yaw angle
         self.pitch = None # Current pitch angle
         self.roll = None # Current roll angle
@@ -76,6 +77,7 @@ class RoverState():
         # obstacles and rock samples
         self.worldmap = np.zeros((200, 200, 3), dtype=np.float)
         self.samples_pos = None # To store the actual sample positions
+        self.collected_samples_pos = None
         self.samples_to_find = 0 # To store the initial count of samples
         self.samples_located = 0 # To store number of samples located on map
         self.samples_collected = 0 # To count the number of samples collected
