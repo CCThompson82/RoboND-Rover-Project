@@ -88,6 +88,12 @@ def decision_step(Rover):
             if (Rover.roll < 355 and Rover.roll >180) or (Rover.roll > 5 and Rover.roll < 180):
                 Rover.mode = 'sandtrap'
 
+            if Rover.samples_to_find == Rover.samples_collected :
+                distance_home = np.sqrt(np.sum([(Rover.pos[ix]-Rover.starting_pos[ix])**2 for ix in range(2)]))
+                if distance_home < 15 :
+                    Rover.mode = 'home'
+                    print('HOME IS NEAR!!!!!!!!!!!!!!!!!!!!!!!')
+
 
 
 
@@ -124,6 +130,8 @@ def decision_step(Rover):
                 Rover.steer = 0
                 Rover.tmp_yaw = Rover.yaw
             else :
+                if Rover.tmp_yaw is None :
+                    Rover.tmp_yaw = Rover.yaw
                 # Rover is close to or stopped
                 if (Rover.total_time - Rover.stopped_timestamp) > 10:
                     if np.equal(np.round(Rover.yaw), np.round(Rover.tmp_yaw)):
@@ -135,7 +143,7 @@ def decision_step(Rover):
                     Rover.steer = 7
                 else  :
                     # rock is visible
-                    if np.abs(np.mean(rocks_df.angles)) < 0.1:
+                    if np.abs(np.mean(rocks_df.angles)) < 0.12:
                         # rock is centered
                         if Rover.near_sample == 0:
                             # not close to rock yet
@@ -151,7 +159,7 @@ def decision_step(Rover):
                                 # but don't exceed 0.4 m/s
                                 Rover.steer = 0
                                 Rover.throttle = 0
-                                Rover.brake = 0.01
+                                Rover.brake = 0
                         else :
                             # rock is close enough to pick up
                             Rover.steer = 0
@@ -190,6 +198,30 @@ def decision_step(Rover):
             Rover.brake = 0
             if (Rover.roll > 355.0) or (Rover.roll < 5.0):
                 Rover.mode = 'forward'
+        elif Rover.mode == 'home':
+            if Rover.vel > 0.4:
+                Rover.throttle = 0
+                Rover.brake = 0.05
+                Rover.steer = 0
+            else :
+                if Rover.starting_pos != Rover.pos:
+                    theta = np.arctan2((Rover.starting_pos[0]-Rover.pos[0]),
+                                        Rover.starting_pos[1]-Rover.pos[1])
+                    if np.abs(theta) <= 0.05 :
+                        Rover.throttle = 0
+                        Rover.brake = 0
+                        Rover.steer = np.clip(np.deg2rad(theta), -15, 15)
+                    else :
+                        Rover.throttle = 0.1
+                        Rover.brake = 0
+                        Rover.steer = 0
+                else :
+                    Rover.brake = Rover.brake_set
+                    Rover.throttle = 0
+                    Rover.steer = 0
+                    print('MADE IT HOME!!!!!!!!!!!!!!!!!!!')
+
+
 
 
     # If in a state where want to pickup a rock send pickup command

@@ -42,6 +42,7 @@ class RoverState():
         self.total_time = None # To record total duration of naviagation
         self.img = None # Current camera image
         self.pos = None # Current position (x, y)
+        self.starting_pos = None
         self.last_position = None
         self.stopped_timestamp = None
         self.tmp_ts = None

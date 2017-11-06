@@ -178,7 +178,9 @@ def perception_step(Rover):
     Rover.obs_dists = obs_dists
     Rover.obs_angles = obs_angles
 
-
+    if Rover.starting_pos is None:
+        if Rover.pos is not None :
+            Rover.starting_pos = Rover.pos 
 
     ############################################################################
     # Save data for analysis and exploration
