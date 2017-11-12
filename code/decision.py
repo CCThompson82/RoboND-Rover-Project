@@ -42,8 +42,6 @@ def decision_step(Rover):
             wall_diffs.append(np.abs(STIFFARM/np.sin(phi))-wall_dist)
 
         m4 = np.deg2rad(np.mean(wall_diffs))
-        print(m4)
-        # #TODO: Switch to nav terrain not obstacles
         nav_set = nav_df[(nav_df.angles > -0.1) & (nav_df.angles < 0.1)]
         obs_set = obs_df[(obs_df.angles > -0.1) & (obs_df.angles < 0.1)]
         # print(min(nav_set.distance), max(nav_set.distance), min(obs_set.distance), max(obs_set.distance))
@@ -88,11 +86,14 @@ def decision_step(Rover):
             if (Rover.roll < 355 and Rover.roll >180) or (Rover.roll > 5 and Rover.roll < 180):
                 Rover.mode = 'sandtrap'
 
-            if Rover.samples_to_find == Rover.samples_collected :
+            if Rover.samples_collected == Rover.samples_to_find :
+                print('LOOKING FOR HOME...')
                 distance_home = np.sqrt(np.sum([(Rover.pos[ix]-Rover.starting_pos[ix])**2 for ix in range(2)]))
-                if distance_home < 15 :
+                print(distance_home)
+                if distance_home < 12 :
                     Rover.mode = 'home'
-                    print('HOME IS NEAR!!!!!!!!!!!!!!!!!!!!!!!')
+                else:
+                    Rover.mode = Rover.mode
 
 
 
@@ -122,11 +123,11 @@ def decision_step(Rover):
                     # Set steer to mean angle
                     Rover.steer = np.clip(m4, -15, 15)
                     Rover.mode = 'forward'
-        elif Rover.mode == 'collection':
 
+        elif Rover.mode == 'collection':
             if Rover.vel > 0.4:
                 Rover.throttle = 0
-                Rover.brake = 0.05
+                Rover.brake = 0.075
                 Rover.steer = 0
                 Rover.tmp_yaw = Rover.yaw
             else :
@@ -172,7 +173,8 @@ def decision_step(Rover):
                         Rover.steer = 7
 
         elif Rover.mode == 'stuck':
-            print('STUCK FOR {} seconds'.format(Rover.total_time - Rover.tmp_ts))
+            print('STUCK FOR {} seconds'.format(
+                Rover.total_time - Rover.tmp_ts))
             if (Rover.total_time - Rover.tmp_ts) < 1.5:
                 Rover.steer = -15
                 Rover.brake = 0
@@ -192,34 +194,60 @@ def decision_step(Rover):
                 Rover.stopped_timestamp = Rover.total_time
                 Rover.tmp_ts = None
                 Rover.mode = 'forward'
+
         elif Rover.mode == 'sandtrap':
             Rover.steer = 15
             Rover.throttle = 0
             Rover.brake = 0
             if (Rover.roll > 355.0) or (Rover.roll < 5.0):
                 Rover.mode = 'forward'
+
         elif Rover.mode == 'home':
+            print('HOME IS CLOSEBY!  Navigating to {}'.format(Rover.starting_pos))
+
+            # home is within 12 m and all samples collected.
             if Rover.vel > 0.4:
+                # if moving, stop
                 Rover.throttle = 0
-                Rover.brake = 0.05
+                Rover.brake = 0.2
                 Rover.steer = 0
             else :
-                if Rover.starting_pos != Rover.pos:
-                    theta = np.arctan2((Rover.starting_pos[0]-Rover.pos[0]),
-                                        Rover.starting_pos[1]-Rover.pos[1])
-                    if np.abs(theta) <= 0.05 :
+                #if stopped, look for starting_pos
+                if ~np.all(np.equal(np.round(Rover.starting_pos), np.round(Rover.pos))):
+                    # we're not home yet
+                    #calculate difference in angle between yaw and starting_pos
+                    d_dest = np.array(Rover.starting_pos) - np.array(Rover.pos)
+
+                    rov_ux = np.cos(np.deg2rad(Rover.yaw))
+                    rov_uy = np.sin(np.deg2rad(Rover.yaw))
+
+                    phi = np.arccos(
+                            (rov_ux*d_dest[0] + rov_uy*d_dest[1]) /
+                            (1*np.sqrt((d_dest[0]**2) + (d_dest[1]**2))))
+                    print('PHI: {}'.format(phi))
+                    if np.abs(phi) >= 0.2 :
+                        # if not pointing at starting_pos, rotate
                         Rover.throttle = 0
                         Rover.brake = 0
-                        Rover.steer = np.clip(np.deg2rad(theta), -15, 15)
+                        Rover.steer = np.clip(np.rad2deg(phi), -10, 10)
                     else :
-                        Rover.throttle = 0.1
-                        Rover.brake = 0
-                        Rover.steer = 0
+                        # pointing at the starting pos, inch forward
+                        if Rover.vel < 0.3 :
+                            # dont go too fast
+                            Rover.throttle = 0.2
+                            Rover.brake = 0
+                            Rover.steer = np.clip(np.rad2deg(phi), -10, 10)
+                        else :
+                            # coasting
+                            Rover.throttle = 0.0
+                            Rover.brake = 0
+                            Rover.steer = np.clip(np.rad2deg(phi), -10, 10)
                 else :
+                    # stop upon arrival
                     Rover.brake = Rover.brake_set
                     Rover.throttle = 0
                     Rover.steer = 0
-                    print('MADE IT HOME!!!!!!!!!!!!!!!!!!!')
+                    print('MADE IT HOME.  MISSION COMPLETE!')
 
 
 
