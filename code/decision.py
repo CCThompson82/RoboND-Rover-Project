@@ -17,14 +17,14 @@ def decision_step(Rover):
         obs_df = pd.DataFrame({'distance':Rover.obs_dists, 'angles':Rover.obs_angles})
         nav_df = pd.DataFrame({'distance':Rover.nav_dists, 'angles':Rover.nav_angles})
         rocks_df = pd.DataFrame({'distance':Rover.rock_dists, 'angles':Rover.rock_angles})
-        STIFFARM = 12
+        STIFFARM = 7
         wall_diffs = []
         for rad in range(-35,-20,5):
             phi = np.deg2rad(rad)
             phi_set = obs_df[(obs_df.angles > phi-0.05) & (obs_df.angles < phi+0.05)]
-            if len(phi_set) == 0 :
+            if len(phi_set) == 0:
                 wall_dist = 0
-            else :
+            else:
                 wall_dist = np.min(phi_set.distance)
             wall_diffs.append(np.abs(STIFFARM/np.sin(phi))-wall_dist)
 
@@ -49,7 +49,7 @@ def decision_step(Rover):
                 Rover.mode = 'collection'
             if Rover.stopped_timestamp is None:
                 Rover.stopped_timestamp = Rover.total_time
-            elif (Rover.total_time - Rover.stopped_timestamp) > 10:
+            elif (Rover.total_time - Rover.stopped_timestamp) > 7:
                 Rover.tmp_ts = Rover.total_time
                 Rover.mode = 'stuck'
 
@@ -61,14 +61,10 @@ def decision_step(Rover):
                 distance_home = np.sqrt(np.sum(
                     [(Rover.pos[ix]-Rover.starting_pos[ix])**2 for
                      ix in range(2)]))
-                print(distance_home)
                 if distance_home < 12:
                     Rover.mode = 'home'
                 else:
                     Rover.mode = Rover.mode
-
-
-
 
         # If we're already in "stop" mode then make different decisions
         elif Rover.mode == 'stop':
@@ -110,6 +106,8 @@ def decision_step(Rover):
                 if (Rover.total_time - Rover.stopped_timestamp) > 10:
                     if np.equal(np.round(Rover.yaw), np.round(Rover.tmp_yaw)):
                         Rover.mode = 'forward'
+                    elif (Rover.total_time - Rover.stopped_timestamp) > 30:
+                        Rover.mode = 'stuck'
                 if len(rocks_df) == 0:
                     # rotate until rock is visible
                     Rover.throttle = 0
@@ -146,6 +144,8 @@ def decision_step(Rover):
                         Rover.steer = 7
 
         elif Rover.mode == 'stuck':
+            if Rover.tmp_ts is None:
+                Rover.tmp_ts = Rover.total_time
             print('STUCK FOR {} seconds'.format(
                 Rover.total_time - Rover.tmp_ts))
             if (Rover.total_time - Rover.tmp_ts) < 1.5:
@@ -153,17 +153,17 @@ def decision_step(Rover):
                 Rover.brake = 0
                 Rover.throttle = -0.5
                 Rover.mode = 'stuck'
-            elif (Rover.total_time - Rover.tmp_ts) < 3.0:
+            elif (Rover.total_time - Rover.tmp_ts) < 3.5:
                 Rover.steer = 15
                 Rover.brake = 0
                 Rover.throttle = 0
                 Rover.mode = 'stuck'
             elif (Rover.total_time - Rover.tmp_ts) < 5.0:
-                Rover.steer = 15
+                Rover.steer = 10
                 Rover.brake = 0
                 Rover.throttle = 0.5
                 Rover.mode = 'stuck'
-            elif (Rover.total_time - Rover.tmp_ts) > 6.0:
+            elif (Rover.total_time - Rover.tmp_ts) > 7.0:
                 Rover.stopped_timestamp = Rover.total_time
                 Rover.tmp_ts = None
                 Rover.mode = 'forward'
@@ -190,14 +190,14 @@ def decision_step(Rover):
                     # we're not home yet
                     #calculate difference in angle between yaw and starting_pos
                     d_dest = np.array(Rover.starting_pos) - np.array(Rover.pos)
-
                     rov_ux = np.cos(np.deg2rad(Rover.yaw))
                     rov_uy = np.sin(np.deg2rad(Rover.yaw))
-
                     phi = np.arccos(
                         (rov_ux*d_dest[0] + rov_uy*d_dest[1]) /
                         (1*np.sqrt((d_dest[0]**2) + (d_dest[1]**2))))
                     print('PHI: {}'.format(phi))
+                    if phi >= np.pi :
+                        phi = np.pi - phi
                     if np.abs(phi) >= 0.2:
                         # if not pointing at starting_pos, rotate
                         Rover.throttle = 0
