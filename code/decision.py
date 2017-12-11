@@ -30,7 +30,7 @@ def decision_step(Rover):
 
         steer_rad = np.deg2rad(np.mean(wall_diffs))
         nav_set = nav_df[(nav_df.angles > -0.1) & (nav_df.angles < 0.1)]
-        obs_set = obs_df[(obs_df.angles > -0.1) & (obs_df.angles < 0.1)]
+        go_set = nav_df[(nav_df.angles > -0.4) & (nav_df.angles < -0.2)]
 
         # Check for Rover.mode status
         if Rover.mode == 'forward':
@@ -76,7 +76,7 @@ def decision_step(Rover):
             # If we're not moving (vel < 0.2) then do something else
             elif Rover.vel <= 0.2:
                 # Now we're stopped and we have vision data to see if there's a path forward
-                if len(nav_set) < Rover.go_forward:
+                if len(go_set) < Rover.go_forward:
                     Rover.throttle = 0
                     # Release the brake to allow turning
                     Rover.brake = 0
@@ -84,7 +84,7 @@ def decision_step(Rover):
                     # will induce 4-wheel turning
                     Rover.steer = 15
                 # If we're stopped but see sufficient navigable terrain, go!
-                if len(nav_set) >= Rover.go_forward:
+                if len(go_set) >= Rover.go_forward:
                     # Set throttle back to stored value
                     Rover.throttle = Rover.throttle_set
                     # Release the brake
