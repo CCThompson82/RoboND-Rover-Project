@@ -87,17 +87,14 @@ def pix_to_world(xpix, ypix, xpos, ypos, yaw, world_size, scale):
 
 # Define a function to perform a perspective transform
 def perspect_transform(img, src, dst):
-
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(img, M, (img.shape[1], img.shape[0]))# keep same size as input image
-
     return warped
 
 
 # Apply the above functions in succession and update the Rover state accordingly
 def perception_step(Rover):
     # Perform perception steps to update Rover()
-    # TODO:
     # NOTE: camera image is coming to you in Rover.img
     # 1) Define source and destination points for perspective transform
     dst_size = 10
@@ -157,11 +154,11 @@ def perception_step(Rover):
     Rover.worldmap[rock_y_world, rock_x_world, 1] += 1
 
     # assert for fidelity
-    if (np.round(Rover.total_time) % 30) == 0 :
-        Rover.worldmap[:,:,0] = np.clip(Rover.worldmap[:,:,0] - Rover.worldmap[:,:,2], 0, 255)
-        Rover.worldmap[:,:,2] =  np.clip(Rover.worldmap[:,:,2] - Rover.worldmap[:,:,0], 0, 255)
-
-
+    if (np.round(Rover.total_time) % 30) == 0:
+        Rover.worldmap[:, :, 0] = np.clip(
+            Rover.worldmap[:, :, 0] - Rover.worldmap[:, :, 2], 0, 255)
+        Rover.worldmap[:, :, 2] = np.clip(
+            Rover.worldmap[:, :, 2] - Rover.worldmap[:, :, 0], 0, 255)
 
     # 8) Convert rover-centric pixel positions to polar coordinates
     # Update Rover pixel distances and angles
@@ -180,22 +177,6 @@ def perception_step(Rover):
 
     if Rover.starting_pos is None:
         if Rover.pos is not None :
-            Rover.starting_pos = Rover.pos 
+            Rover.starting_pos = Rover.pos
 
-    ############################################################################
-    # Save data for analysis and exploration
-    # try :
-    #     _ = os.listdir('../.tmp')
-    # except :
-    #     os.makdirs('../.tmp')
-    #
-    # nav_df = pd.DataFrame({'distance': dist, 'angles': angles})
-    # nav_df.to_csv('../.tmp/navigation_df.csv')
-    # rocks_df = pd.DataFrame({'distance': rock_dists, 'angles': rock_angles})
-    # rocks_df.to_csv('../.tmp/rocks_df.csv')
-    # obs_df = pd.DataFrame({'distance': obs_dists, 'angles': obs_angles})
-    # obs_df.to_csv('../.tmp/obs_df.csv')
-    # pd.DataFrame(Rover.worldmap[:,:,0]).to_csv('../.tmp/obs_map.csv')
-    # pd.DataFrame({'xpix':nogo_x, 'ypix':nogo_y}).to_csv('../.tmp/obs_pix.csv')
-    ############################################################################
     return Rover
