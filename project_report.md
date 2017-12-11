@@ -155,8 +155,10 @@ same place the simulation began.
 This implementation generally works and can find, collect all samples, and
 return to home position in about 20 minutes.  However, placement of rock samples
 can have drastic effects on the software performance.  Attached to this
-submission is a [video](https://github.com/CCThompson82/RoboND-Rover-Project/blob/submission_cleanup/output/submission_run1.mp4.zip) where the rover completed the mission successfully with
-resolution set to a high quality and acheiving approximately 30 fps.    
+submission is a
+[video](https://github.com/CCThompson82/RoboND-Rover-Project/blob/master/output/submission_run1.mp4.zip)
+where the rover completed the mission successfully with resolution set to a high
+quality and acheiving approximately 30 fps.    
 
 
 ### Issues and Potential Improvements
